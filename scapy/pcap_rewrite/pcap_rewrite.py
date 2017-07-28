@@ -1,6 +1,41 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+__license__ = """
+
+Author: https://twitter.com/1_mod_m/
+
+Project site: https://github.com/1modm/Snippets
+
+Copyright (c) 2017, MM
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of copyright holders nor the names of its
+   contributors may be used to endorse or promote products derived
+   from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL COPYRIGHT HOLDERS OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+"""
+
 import os
 import sys
 import logging
@@ -61,6 +96,9 @@ def main():
     src_mac = results.mac_src # New MAC SRC
     dst_mac = results.mac_dst # New MAC DST
 
+    datenow = datetime.now()
+    datesec = datenow.strftime('%Y-%m-%d_%H_%M_%S')
+
     print(os.linesep + (colored('[+] Reading pcap: ' + results.pcap, 'green')))
     pcap_loaded=rdpcap(results.pcap)
 
@@ -75,12 +113,12 @@ def main():
                     sip = p[IP].src
                     dip = p[IP].dst
 
-    
+   
     if results.all:
-        print((colored('[+] Rewriting original SRC and DST (also MACs and Data if provided) for ALL packets', 'yellow')))
+        print((colored('[+] Rewriting original SRC and DST (also MACs and Data if provided) for ALL packets: ' + source_ip + ' and ' + destination_ip, 'yellow')))
     else:
         print((colored('[+] Original IPs to be replaced: ' + sip + ' and ' + dip, 'yellow')))
-        print((colored('[+] Rewriting original SRC and DST (also MACs and Data if provided) for the IPs ' + sip + ' and ' + dip + ' only', 'yellow')))
+        print((colored('[+] Rewriting original SRC and DST (also MACs and Data if provided): ' + sip + ' --> ' + source_ip + ' and ' + dip + ' --> ' + destination_ip + ' only', 'yellow')))
 
     for p in pcap_loaded:
             if p.haslayer(IP):
@@ -112,12 +150,6 @@ def main():
                             p[Ether].src= src_mac
                             p[Ether].dst= dst_mac
 
-                        # Replace data in payload
-                        if (data and new_data):
-                            if p.haslayer(UDP):
-                                p[UDP].payload = str(p[UDP].payload).replace(data, new_data)
-                            elif p.haslayer(TCP):
-                                p[TCP].payload = str(p[TCP].payload).replace(data, new_data)
 
                     if p[IP].dst == sip:
                         # Replace IPs
@@ -129,12 +161,12 @@ def main():
                             p[Ether].src= dst_mac
                             p[Ether].dst= src_mac
 
-                        # Replace data in payload
-                        if (data and new_data):
-                            if p.haslayer(UDP):
-                                p[UDP].payload = str(p[UDP].payload).replace(data, new_data)
-                            elif p.haslayer(TCP):
-                                p[TCP].payload = str(p[TCP].payload).replace(data, new_data)
+                # Replace data in payload
+                if (data and new_data):
+                    if p.haslayer(UDP):
+                        p[UDP].payload = str(p[UDP].payload).replace(data, new_data)
+                    elif p.haslayer(TCP):
+                        p[TCP].payload = str(p[TCP].payload).replace(data, new_data)
 
                 # Fix payload len
                 if p.haslayer(UDP):
@@ -146,9 +178,8 @@ def main():
                     payload_dif = payload_after - payload_before
                     p[IP].len = p[IP].len + payload_dif
 
-    wrpcap("output_rewrite.pcap", pcap_loaded)
-    print((colored('[+] Output written to: output_rewrite.pcap', 'green')) + os.linesep)
-
+    wrpcap("output_rewrite" + datesec + ".pcap", pcap_loaded)
+    print((colored('[+] Output written to: output_rewrite' + datesec + '.pcap', 'green')) + os.linesep)
 
 #------------------------------------------------------------------------------
 # Main
