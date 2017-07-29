@@ -126,13 +126,13 @@ def main():
                 # Remove UDP checksum
                 if p.haslayer(UDP):
                     del p[UDP].chksum
-                    payload_before = len(p[UDP].payload)
+                    payload_orig = len(p[UDP].payload)
 
                 # Remove TCP checksum
                 elif p.haslayer(TCP):
                     del p[IP].chksum
                     del p[TCP].chksum
-                    payload_before = len(p[TCP].payload)
+                    payload_orig = len(p[TCP].payload)
 
                 # Replace SRC and DST IPs for all packets
                 if results.all:
@@ -170,13 +170,13 @@ def main():
 
                 # Fix payload len
                 if p.haslayer(UDP):
-                    payload_after = len(p[UDP].payload)
-                    payload_dif = payload_after - payload_before
-                    p[IP].len = p[IP].len + payload_dif
+                    payload_modif = len(p[UDP].payload)
+                    payload = payload_modif - payload_orig
+                    p[IP].len = p[IP].len + payload
                 elif p.haslayer(TCP):
-                    payload_after = len(p[TCP].payload)
-                    payload_dif = payload_after - payload_before
-                    p[IP].len = p[IP].len + payload_dif
+                    payload_modif = len(p[TCP].payload)
+                    payload = payload_modif - payload_orig
+                    p[IP].len = p[IP].len + payload
 
     wrpcap("output_rewrite" + datesec + ".pcap", pcap_loaded)
     print((colored('[+] Output written to: output_rewrite' + datesec + '.pcap', 'green')) + os.linesep)
