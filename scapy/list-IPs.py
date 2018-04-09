@@ -62,6 +62,9 @@ def cmdline_parser():
     # Mandatory
     parser.add_argument('pcap', type=str, help='PCAP')
 
+    # Optional
+    parser.add_argument('-s', action='store', default='', dest='orig_src', help='SRC IP')
+
     return parser
 
 
@@ -82,6 +85,8 @@ def main():
 	# Get results line parser.
 	results = parser.parse_args()
 
+	source_ip_filter = results.orig_src # SRC IP
+
 	print(os.linesep + (colored('[+] Reading pcap: ' + results.pcap, 'green')))
 	pcap_loaded=rdpcap(results.pcap)
 
@@ -96,8 +101,15 @@ def main():
 			ip_src=pkt[IP].src
 			ip_dst=pkt[IP].dst
 
-			Source_IPs.append(ip_src)
-			Destination_IPs.append(ip_dst)
+			if source_ip_filter:
+				if ip_src == source_ip_filter:
+					Source_IPs.append(ip_src)
+			else:
+				Source_IPs.append(ip_src)
+				Destination_IPs.append(ip_dst)
+
+	Source_IPs = set(Source_IPs)
+	Destination_IPs = set(Destination_IPs)
 
 	print(os.linesep + (colored('[+] Source IPs:', 'green')))
 	SIP = ",".join(str(i) for i in Source_IPs)
